@@ -5,7 +5,7 @@
 
 #include "sensor_status.h"
 
-typedef void (*Mq7ReadingCallback)(SensorStatus status, float ppm, int raw, int mv);
+typedef void (*Mq7ReadingCallback)(SensorStatus status, float ppm);
 
 void init_mq7_heater();
 void set_mq7_callback(Mq7ReadingCallback callback);

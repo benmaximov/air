@@ -47,10 +47,7 @@ static void on_scd4x_reading(
   }
 }
 
-static void on_mq7_reading(SensorStatus status, float ppm, int raw, int mv) {
-  (void)raw;
-  (void)mv;
-
+static void on_mq7_reading(SensorStatus status, float ppm) {  
   if (status == SensorStatus::OK) {
     messages[5].value = String(ppm, 1) + " ppm";
   } else {

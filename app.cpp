@@ -10,10 +10,10 @@
 // {label, value, current_value, threshold, normal_ms, alarm_ms}
 // threshold=0 means no alarm (T, RH)
 DisplayMessage messages[] = {
-  {"CH\x03",  "---- ppm",    0.0f,   100.0f, 3000,  12000}, // CH4  alarm >100 ppm
-  {"H\x01S",  "---- ppm",    0.0f,     5.0f, 3000,  12000}, // H2S  alarm >5 ppm
-  {"CO\x01",  "---- ppm",    0.0f,  1000.0f, 3000,  12000}, // CO2  alarm >1000 ppm
-  {"T",       "---- \x02""C",0.0f,     0.0f, 3000,   3000}, // T    no alarm
+  {"CH\x04",  "---- ppm",    0.0f,   100.0f, 3000,  12000}, // CH4  alarm >100 ppm
+  {"H\x02S",  "---- ppm",    0.0f,     5.0f, 3000,  12000}, // H2S  alarm >5 ppm
+  {"CO\x02",  "---- ppm",    0.0f,  1000.0f, 3000,  12000}, // CO2  alarm >1000 ppm
+  {"T",       "---- \x01""C",0.0f,     0.0f, 3000,   3000}, // T    no alarm
   {"RH",      "---- %",      0.0f,     0.0f, 3000,   3000}, // RH   no alarm
   {"CO",      "---- ppm",    0.0f,    10.0f, 3000,  12000}, // CO   alarm >10 ppm
 };
@@ -56,12 +56,12 @@ static void on_scd4x_reading(
 
 static void on_dht22_reading(SensorStatus status, float temperature_c, float humidity_rh) {
   if (status == SensorStatus::OK) {
-    messages[3].value         = String(temperature_c, 1) + " \x02""C";
+    messages[3].value         = String(temperature_c, 1) + " \x01""C";
     messages[3].current_value = temperature_c;
     messages[4].value         = String(humidity_rh, 1) + " %";
     messages[4].current_value = humidity_rh;
   } else {
-    messages[3].value         = "---- \x02""C";
+    messages[3].value         = "---- \x01""C";
     messages[3].current_value = 0.0f;
     messages[4].value         = "---- %";
     messages[4].current_value = 0.0f;

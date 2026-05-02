@@ -142,26 +142,79 @@ void init_vfd() {
   vfd_write_padded(" ");
 }
 
-void cycle(const DisplayMessage *messages, size_t count, uint32_t interval_ms) {
-  static size_t index = 0;
-  static uint32_t last_ms = 0;
+// Blink period for alarming label (ms on + ms off)
+static const uint32_t BLINK_ON_MS  = 500;
+static const uint32_t BLINK_OFF_MS = 500;
+
+static bool is_alarming(const DisplayMessage &msg) {
+  return msg.threshold > 0.0f && msg.current_value >= msg.threshold;
+}
+
+void cycle(DisplayMessage *messages, size_t count) {
+  static size_t   index       = 0;
+  static uint32_t slot_start  = 0;   // when we first entered this slot
+  static uint32_t blink_ms    = 0;   // last blink toggle time
+  static bool     blink_label = true; // true = show label, false = blank it
+  static String   last_line   = "";  // last line written, to detect changes
 
   if (count == 0 || messages == nullptr) {
     return;
   }
 
-  const uint32_t now = millis();
-  if (last_ms == 0 || now - last_ms >= interval_ms) {
-    const String line = format_line(messages[index]);
-    vfd_write_padded(line);
-    //Serial.print("VFD: ");
-    //Serial.print(line);
-    //Serial.print("\r\n");
+  // Clamp index in case count shrank
+  if (index >= count) {
+    index = 0;
+  }
 
-    index++;
-    if (index >= count) {
-      index = 0;
+  const uint32_t now = millis();
+
+  // First call init
+  if (slot_start == 0) {
+    slot_start  = now;
+    blink_ms    = now;
+    blink_label = true;
+    last_line   = "";
+  }
+
+  DisplayMessage &msg     = messages[index];
+  const bool      alarming = is_alarming(msg);
+  const uint32_t  dwell    = alarming ? msg.alarm_ms : msg.normal_ms;
+
+  // ── Advance to next slot? ──────────────────────────────────────────────────
+  if (now - slot_start >= dwell) {
+    // Move to next index
+    index = (index + 1) % count;
+    slot_start  = now;
+    blink_ms    = now;
+    blink_label = true;
+    last_line   = ""; // force redraw on new slot
+    return;           // pick up the new slot next call
+  }
+
+  // ── Build the line for current slot ───────────────────────────────────────
+  // Handle blink toggle for alarming entry
+  if (alarming) {
+    const uint32_t blink_period = blink_label ? BLINK_ON_MS : BLINK_OFF_MS;
+    if (now - blink_ms >= blink_period) {
+      blink_label = !blink_label;
+      blink_ms    = now;
     }
-    last_ms = now;
+  } else {
+    blink_label = true; // non-alarming: always show label
+  }
+
+  // Temporarily blank the label when blink phase is OFF
+  String saved_label = msg.label;
+  if (!blink_label) {
+    msg.label = String(""); // blank — spaces will be inserted by format_line
+  }
+
+  const String line = format_line(msg);
+  msg.label = saved_label; // restore immediately
+
+  // Only write to VFD if content changed (live update without flicker)
+  if (line != last_line) {
+    vfd_write_padded(line);
+    last_line = line;
   }
 }

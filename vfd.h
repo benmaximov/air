@@ -6,6 +6,7 @@
 #include "display_message.h"
 
 void init_vfd();
-void cycle(const DisplayMessage *messages, size_t count, uint32_t interval_ms);
+// messages is non-const because cycle() temporarily mutates label for blink
+void cycle(DisplayMessage *messages, size_t count);
 
 #endif

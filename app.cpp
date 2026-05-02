@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#include "dht22_reader.h"
 #include "mq7_heater.h"
 #include "sc05_reader.h"
 #include "scd4x_reader.h"
@@ -38,10 +39,16 @@ static void on_scd4x_reading(
     float humidity_rh) {
   if (status == SensorStatus::OK) {
     messages[2].value = String(co2_ppm) + " ppm";
+  } else {
+    messages[2].value = "---- ppm";
+  }
+}
+
+static void on_dht22_reading(SensorStatus status, float temperature_c, float humidity_rh) {
+  if (status == SensorStatus::OK) {
     messages[3].value = String(temperature_c, 1) + " \x02" "C";
     messages[4].value = String(humidity_rh, 1) + " %";
   } else {
-    messages[2].value = "---- ppm";
     messages[3].value = "---- \x02" "C";
     messages[4].value = "---- %";
   }
@@ -67,6 +74,9 @@ void setup() {
   set_scd4x_callback(on_scd4x_reading);
   init_scd4x();
 
+  set_dht22_callback(on_dht22_reading);
+  init_dht22();
+
   set_zc13_callback(on_zc13_reading);
   init_zc13();
 
@@ -81,5 +91,6 @@ void loop() {
   poll_zc13();
   poll_sc05();
   poll_mq7_heater();
+  poll_dht22();
   cycle(messages, count, 5000);
 }

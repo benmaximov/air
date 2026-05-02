@@ -3,7 +3,7 @@
 #include <DFRobot_SCD4X.h>
 #include <Wire.h>
 
-#define DEBUG_SENSOR 0
+#define DEBUG_SENSOR 1
 
 #if DEBUG_SENSOR
 #define DBG_PRINT(...) Serial.print(__VA_ARGS__)

@@ -1,5 +1,15 @@
 #include "mq7_heater.h"
 
+#define DEBUG_SENSOR 0
+
+#if DEBUG_SENSOR
+#define DBG_PRINT(...)   Serial.print(__VA_ARGS__)
+#define DBG_PRINTF(...)  Serial.printf(__VA_ARGS__)
+#else
+#define DBG_PRINT(...)
+#define DBG_PRINTF(...)
+#endif
+
 // MQ-7 heater drive on GPIO4
 static const int MQ7_PWM_PIN = 4;
 static const int MQ7_PWM_CHANNEL = 3;
@@ -67,7 +77,7 @@ void init_mq7_heater()
   g_last_adc_ms = 0;
   set_heater_duty(MQ7_DUTY_HEAT);
 
-  Serial.print("MQ7 phase: HEAT (60s, 100%)\r\n");
+  DBG_PRINT("MQ7 phase: HEAT (60s, 100%)\r\n");
   // emit_status(SensorStatus::TIMEOUT, 0.0f);
 }
 
@@ -83,7 +93,7 @@ void poll_mq7_heater()
       g_phase_start_ms = now;
       g_last_adc_ms = 0;
       set_heater_duty(MQ7_DUTY_LOW);
-      Serial.print("MQ7 phase: WAIT (30s, 7%)\r\n");
+      DBG_PRINT("MQ7 phase: WAIT (30s, 7%)\r\n");
       // emit_status(SensorStatus::TIMEOUT, 0.0f);
     }
     return;
@@ -97,7 +107,7 @@ void poll_mq7_heater()
       g_phase_start_ms = now;
       g_last_adc_ms = 0;
       set_heater_duty(MQ7_DUTY_LOW);
-      Serial.print("MQ7 phase: MEASURE (60s, 7%)\r\n");
+      DBG_PRINT("MQ7 phase: MEASURE (60s, 7%)\r\n");
     }
     return;
   }
@@ -113,7 +123,7 @@ void poll_mq7_heater()
 
       // 2. Calculate actual voltage (before the divider)
       float v_out = pin_mv * DIVIDER_MULT;
-      Serial.printf("--- MQ7 sensor_v_out = %.2f mV\r\n", v_out);
+      DBG_PRINTF("--- MQ7 sensor_v_out = %.2f mV\r\n", v_out);
 
       // 3. Prevent division by zero if sensor is disconnected
       if (v_out <= 0)
@@ -138,7 +148,7 @@ void poll_mq7_heater()
       if (ppm < 0)
         ppm = 0;
 
-      Serial.printf("--- MQ7 actual ppm=%.1f\r\n", ppm);
+      DBG_PRINTF("--- MQ7 actual ppm=%.1f\r\n", ppm);
       emit_status(SensorStatus::OK, ppm);
     }
   }
@@ -149,7 +159,7 @@ void poll_mq7_heater()
     g_phase_start_ms = now;
     g_last_adc_ms = 0;
     set_heater_duty(MQ7_DUTY_HEAT);
-    Serial.print("MQ7 phase: HEAT (60s, 100%)\r\n");
+    DBG_PRINT("MQ7 phase: HEAT (60s, 100%)\r\n");
     // emit_status(SensorStatus::TIMEOUT, 0.0f);
   }
 }

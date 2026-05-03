@@ -2,7 +2,7 @@
 
 #include <DHT.h>
 
-#define DEBUG_SENSOR 1
+#define DEBUG_SENSOR 0
 
 #if DEBUG_SENSOR
 #define DBG_PRINT(...)  Serial.print(__VA_ARGS__)
@@ -12,8 +12,8 @@
 #define DBG_PRINTF(...)
 #endif
 
-static const int DHT22_PIN = 7;
-static const uint32_t POLL_INTERVAL_MS = 2000; // DHT22 max sample rate ~0.5 Hz
+static const int DHT22_PIN = 14;
+static const uint32_t POLL_INTERVAL_MS = 2500; // DHT22 max sample rate ~0.5 Hz — 2500ms avoids MQ7 1000ms ADC alignment
 
 static DHT g_dht(DHT22_PIN, DHT22);
 static Dht22ReadingCallback g_callback = nullptr;

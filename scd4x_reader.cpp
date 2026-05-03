@@ -3,7 +3,7 @@
 #include <DFRobot_SCD4X.h>
 #include <Wire.h>
 
-#define DEBUG_SENSOR 1
+#define DEBUG_SENSOR 0
 
 #if DEBUG_SENSOR
 #define DBG_PRINT(...) Serial.print(__VA_ARGS__)
@@ -13,9 +13,9 @@
 #define DBG_PRINTF(...)
 #endif
 
-// ESP32-S3 default I2C pins (DevKitC-1)
+// ESP32-S3 I2C pins
 static const uint8_t I2C_SDA_PIN = 8;
-static const uint8_t I2C_SCL_PIN = 9;
+static const uint8_t I2C_SCL_PIN = 18; // SDA=8, SCL=18
 static const uint8_t SCD4X_ADDR = SCD4X_I2C_ADDR;
 
 static DFRobot_SCD4X g_scd4x(&Wire, SCD4X_ADDR);
@@ -71,6 +71,18 @@ static bool scd4x_try_init() {
 void init_scd4x() {
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
   DBG_PRINTF("SCD4x I2C init: SDA=%u SCL=%u\r\n", I2C_SDA_PIN, I2C_SCL_PIN);
+
+  // Scan I2C bus and print all found devices
+  DBG_PRINT("I2C scan:\r\n");
+  bool found_any = false;
+  for (uint8_t addr = 1; addr < 127; addr++) {
+    Wire.beginTransmission(addr);
+    if (Wire.endTransmission() == 0) {
+      DBG_PRINTF("  found 0x%02X\r\n", addr);
+      found_any = true;
+    }
+  }
+  if (!found_any) DBG_PRINT("  no devices found\r\n");
 
   // Force immediate first init attempt.
   g_last_init_try_ms = 0;

@@ -1,21 +1,26 @@
 #include <Arduino.h>
 
 #include "dht22_reader.h"
+#include "mq137_reader.h"
 #include "mq7_heater.h"
 #include "sc05_reader.h"
 #include "scd4x_reader.h"
 #include "vfd.h"
 #include "zc13_reader.h"
 
+// Set to 1 to enable ADC calibration mode — samples GPIO5 raw and prints mV, skips all other code
+#define ADC_CAL_MODE 0
+
 // {label, value, current_value, threshold, normal_ms, alarm_ms}
 // threshold=0 means no alarm (T, RH)
 DisplayMessage messages[] = {
-  {"CH\x04",  "---- ppm",    0.0f,   100.0f, 3000,  12000}, // CH4  alarm >100 ppm
+  {"CH\x04",  "---- ppm",    0.0f,   100.0f, 3000,  12000}, // CH4  alarm >200 ppm (basement gas installation — early warning)
   {"H\x02S",  "---- ppm",    0.0f,     5.0f, 3000,  12000}, // H2S  alarm >5 ppm
   {"CO\x02",  "---- ppm",    0.0f,  1000.0f, 3000,  12000}, // CO2  alarm >1000 ppm
   {"T",       "---- \x01""C",0.0f,     0.0f, 3000,   3000}, // T    no alarm
   {"RH",      "---- %",      0.0f,     0.0f, 3000,   3000}, // RH   no alarm
   {"CO",      "---- ppm",    0.0f,    10.0f, 3000,  12000}, // CO   alarm >10 ppm
+  {"NH\x03",  "---- ppm",   0.0f,    25.0f, 3000,  12000}, // NH3  alarm >25 ppm
 };
 
 static void on_zc13_reading(SensorStatus status, uint16_t ch4_ppm) {
@@ -78,9 +83,25 @@ static void on_mq7_reading(SensorStatus status, float ppm) {
   }
 }
 
+static void on_mq137_reading(SensorStatus status, float ppm) {
+  if (status == SensorStatus::OK) {
+    messages[6].value         = String(ppm, 1) + " ppm";
+    messages[6].current_value = ppm;
+  } else {
+    messages[6].value         = "---- ppm";
+    messages[6].current_value = 0.0f;
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   delay(100);
+
+#if ADC_CAL_MODE
+  analogSetPinAttenuation(5, ADC_11db);
+  Serial.println("ADC_CAL_MODE: sampling GPIO5 every 500ms");
+  return;
+#endif
 
   init_vfd();
 
@@ -98,15 +119,26 @@ void setup() {
 
   set_sc05_callback(on_sc05_reading);
   init_sc05();
+
+  set_mq137_callback(on_mq137_reading);
+  init_mq137();
 }
 
 void loop() {
+#if ADC_CAL_MODE
+  const float mv = analogReadMilliVolts(5);
+  Serial.printf("GPIO5 ADC = %.2f mV\r\n", mv);
+  delay(500);
+  return;
+#endif
+
   const size_t count = sizeof(messages) / sizeof(messages[0]);
 
   poll_scd4x();
   poll_zc13();
   poll_sc05();
   poll_mq7_heater();
+  poll_mq137();
   poll_dht22();
   cycle(messages, count);
 }

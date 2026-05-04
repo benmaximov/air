@@ -1,0 +1,92 @@
+# Home Assistant REST sensor configuration for ESP32-S3 Air Quality Monitor
+# Endpoint: http://192.168.3.52:8080/
+#
+# Add to configuration.yaml:
+#   rest: !include ha_sensors.yaml
+#
+# Or paste the contents directly into configuration.yaml under a "rest:" key.
+#
+# Scan interval is configurable — change scan_interval value (seconds).
+
+- resource: http://192.168.3.52:8080/
+  scan_interval: 30
+  sensor:
+    - name: "Basement CH4"
+      unique_id: basement_ch4
+      value_template: "{{ value_json['CH4']['raw'] }}"
+      unit_of_measurement: "ppm"
+      device_class: gas
+      state_class: measurement
+      icon: mdi:gas-cylinder
+
+    - name: "Basement H2S"
+      unique_id: basement_h2s
+      value_template: "{{ value_json['H2S']['raw'] }}"
+      unit_of_measurement: "ppm"
+      state_class: measurement
+      icon: mdi:molecule
+
+    - name: "Basement CO2"
+      unique_id: basement_co2
+      value_template: "{{ value_json['CO2']['raw'] }}"
+      unit_of_measurement: "ppm"
+      device_class: carbon_dioxide
+      state_class: measurement
+      icon: mdi:molecule-co2
+
+    - name: "Basement Temperature"
+      unique_id: basement_temperature
+      value_template: "{{ value_json['T']['raw'] }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      icon: mdi:thermometer
+
+    - name: "Basement Humidity"
+      unique_id: basement_humidity
+      value_template: "{{ value_json['RH']['raw'] }}"
+      unit_of_measurement: "%"
+      device_class: humidity
+      state_class: measurement
+      icon: mdi:water-percent
+
+    - name: "Basement CO"
+      unique_id: basement_co
+      value_template: "{{ value_json['CO']['raw'] }}"
+      unit_of_measurement: "ppm"
+      device_class: carbon_monoxide
+      state_class: measurement
+      icon: mdi:molecule-co
+
+    - name: "Basement NH3"
+      unique_id: basement_nh3
+      value_template: "{{ value_json['NH3']['raw'] }}"
+      unit_of_measurement: "ppm"
+      state_class: measurement
+      icon: mdi:chemical-weapon
+
+    # Alarm states (binary)
+    - name: "Basement CH4 Alarm"
+      unique_id: basement_ch4_alarm
+      value_template: "{{ value_json['CH4']['alarm'] }}"
+      icon: mdi:alarm-light
+
+    - name: "Basement H2S Alarm"
+      unique_id: basement_h2s_alarm
+      value_template: "{{ value_json['H2S']['alarm'] }}"
+      icon: mdi:alarm-light
+
+    - name: "Basement CO Alarm"
+      unique_id: basement_co_alarm
+      value_template: "{{ value_json['CO']['alarm'] }}"
+      icon: mdi:alarm-light
+
+    - name: "Basement CO2 Alarm"
+      unique_id: basement_co2_alarm
+      value_template: "{{ value_json['CO2']['alarm'] }}"
+      icon: mdi:alarm-light
+
+    - name: "Basement NH3 Alarm"
+      unique_id: basement_nh3_alarm
+      value_template: "{{ value_json['NH3']['alarm'] }}"
+      icon: mdi:alarm-light

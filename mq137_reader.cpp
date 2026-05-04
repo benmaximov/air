@@ -24,7 +24,7 @@ static const float DIVIDER_MULT = RL / R_BOTTOM;
 static const float VIN_MV       = 4700.0f;  // measured at sensor heater / VCC pin
 
 // Calibration — R0 in clean air, update after burn-in
-static const float R0 = 12000.0f; // placeholder — run CAL_MODE to calibrate
+static float       R0 = 12000.0f; // placeholder — run CAL_MODE to calibrate (runtime-settable)
 
 // Sampling: average over a window, emit once per window
 static const uint32_t SAMPLE_INTERVAL_MS = 1000;  // 1 sample/sec
@@ -34,6 +34,7 @@ static uint32_t g_last_sample_ms  = 0;
 static uint32_t g_window_start_ms = 0;
 static float    g_meas_sum        = 0.0f;
 static uint32_t g_meas_count      = 0;
+static float    g_suggested_r0    = 0.0f; // last CAL-calculated R0
 
 static Mq137ReadingCallback g_callback = nullptr;
 
@@ -112,6 +113,7 @@ void poll_mq137()
                  v_out, rs, ppm, g_meas_count);
 
 #if MQ137_CAL_MODE
+      g_suggested_r0 = rs;
       DBG_PRINTF("\r\n*** MQ137 CAL: suggested R0 = %.0f (avg over %lu samples)\r\n", rs, g_meas_count);
       DBG_PRINTF("*** Update: static const float R0 = %.0ff;\r\n\r\n", rs);
 #endif
@@ -123,3 +125,7 @@ void poll_mq137()
     g_meas_count = 0;
   }
 }
+
+float mq137_get_r0()           { return R0; }
+float mq137_get_suggested_r0() { return g_suggested_r0; }
+void  mq137_set_r0(float r0)   { R0 = r0; DBG_PRINTF("MQ137 R0 set to %.0f\r\n", R0); }

@@ -25,7 +25,7 @@ static const float R_TOP        = 33000.0f; // top resistor (MQ-B to ADC)
 static const float R_BOTTOM     = 10000.0f; // bottom resistor (ADC to GND)
 static const float RL           = R_TOP + R_BOTTOM;
 static const float DIVIDER_MULT = RL / R_BOTTOM;
-static const float R0           = 20000.0f; // baseline in clean air
+static float       R0           = 20000.0f; // baseline in clean air (runtime-settable)
 
 // Duty targets
 static const float MQ7_HEATER_LOW_MV = 1500.0f; // target low temp heater voltage (datasheet: 1.5V)
@@ -54,8 +54,9 @@ static uint32_t  g_phase_start_ms = 0;
 static Mq7ReadingCallback g_callback = nullptr;
 
 // Accumulator for MEASURE phase averaging (shared by normal + CAL mode)
-static float    g_meas_sum   = 0.0f; // sum of pin_mv samples
-static uint32_t g_meas_count = 0;
+static float    g_meas_sum        = 0.0f;
+static uint32_t g_meas_count      = 0;
+static float    g_suggested_r0    = 0.0f; // last CAL-calculated R0
 
 static void emit_status(SensorStatus status, float ppm)
 {
@@ -168,6 +169,7 @@ void poll_mq7_heater()
                  v_out, rs, ppm, g_meas_count);
 
 #if MQ7_CAL_MODE
+      g_suggested_r0 = rs;
       DBG_PRINTF("\r\n*** MQ7 CAL: suggested R0 = %.0f (avg over %lu samples)\r\n", rs, g_meas_count);
       DBG_PRINTF("*** Update: static const float R0 = %.0ff;\r\n\r\n", rs);
 #endif
@@ -182,3 +184,7 @@ void poll_mq7_heater()
   DBG_PRINTF("MQ7 phase: HEAT (%lus, 100%%)\r\n", HEAT_PHASE_MS / 1000);
   }
 }
+
+float mq7_get_r0()           { return R0; }
+float mq7_get_suggested_r0() { return g_suggested_r0; }
+void  mq7_set_r0(float r0)   { R0 = r0; DBG_PRINTF("MQ7 R0 set to %.0f\r\n", R0); }

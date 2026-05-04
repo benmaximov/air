@@ -6,6 +6,7 @@
 #include "sc05_reader.h"
 #include "scd4x_reader.h"
 #include "vfd.h"
+#include "wifi_server.h"
 #include "zc13_reader.h"
 
 // Set to 1 to enable ADC calibration mode — samples GPIO5 raw and prints mV, skips all other code
@@ -22,6 +23,7 @@ DisplayMessage messages[] = {
   {"CO",      "---- ppm",    0.0f,    10.0f, 3000,  12000}, // CO   alarm >10 ppm
   {"NH\x03",  "---- ppm",   0.0f,    25.0f, 3000,  12000}, // NH3  alarm >25 ppm
 };
+extern const size_t messages_count = sizeof(messages) / sizeof(messages[0]);
 
 static void on_zc13_reading(SensorStatus status, uint16_t ch4_ppm) {
   if (status == SensorStatus::OK) {
@@ -122,6 +124,8 @@ void setup() {
 
   set_mq137_callback(on_mq137_reading);
   init_mq137();
+
+  init_wifi_server();
 }
 
 void loop() {
@@ -132,8 +136,9 @@ void loop() {
   return;
 #endif
 
-  const size_t count = sizeof(messages) / sizeof(messages[0]);
+  const size_t count = messages_count;
 
+  poll_wifi_server();
   poll_scd4x();
   poll_zc13();
   poll_sc05();

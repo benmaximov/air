@@ -5,6 +5,13 @@
 
 #define DEBUG_SENSOR 0
 
+// Set to 1 to perform a one-shot forced recalibration after CALIBRATION_DELAY_MS
+// of stable readings. Flash with this enabled while the sensor is OUTSIDE in
+// fresh air, wait for the Serial message, then reflash with it set back to 0.
+#define FORCED_CALIBRATION 0
+#define FORCED_CALIBRATION_PPM 420
+#define FORCED_CALIBRATION_DELAY_MS (5UL * 60UL * 1000UL) // 5 minutes
+
 #if DEBUG_SENSOR
 #define DBG_PRINT(...) Serial.print(__VA_ARGS__)
 #define DBG_PRINTF(...) Serial.printf(__VA_ARGS__)
@@ -21,6 +28,9 @@ static const uint8_t SCD4X_ADDR = SCD4X_I2C_ADDR;
 static DFRobot_SCD4X g_scd4x(&Wire, SCD4X_ADDR);
 static bool g_scd4x_ok = false;
 static Scd4xReadingCallback g_reading_callback = nullptr;
+#if FORCED_CALIBRATION
+static bool g_calibration_done = false;
+#endif
 
 static void emit_status(SensorStatus status, uint16_t co2_ppm, float t, float rh) {
   if (g_reading_callback != nullptr) {
@@ -60,7 +70,12 @@ static bool scd4x_try_init() {
     return false;
   }
 
-  // Keep default sensor compensation/settings; just start periodic mode.
+  // Set ambient pressure compensation (944 mbar = 94400 Pa).
+  // The library divides by 100 internally before sending to the sensor register,
+  // so pass Pa here. This corrects CO2 upward for our below-sea-level pressure.
+  //g_scd4x.setAmbientPressure(94400);
+
+  // Start periodic measurement mode.
   g_scd4x.enablePeriodMeasure(SCD4X_START_PERIODIC_MEASURE);
   g_scd4x_ok = true;
   g_last_ready_ms = now;
@@ -71,18 +86,6 @@ static bool scd4x_try_init() {
 void init_scd4x() {
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
   DBG_PRINTF("SCD4x I2C init: SDA=%u SCL=%u\r\n", I2C_SDA_PIN, I2C_SCL_PIN);
-
-  // Scan I2C bus and print all found devices
-  DBG_PRINT("I2C scan:\r\n");
-  bool found_any = false;
-  for (uint8_t addr = 1; addr < 127; addr++) {
-    Wire.beginTransmission(addr);
-    if (Wire.endTransmission() == 0) {
-      DBG_PRINTF("  found 0x%02X\r\n", addr);
-      found_any = true;
-    }
-  }
-  if (!found_any) DBG_PRINT("  no devices found\r\n");
 
   // Force immediate first init attempt.
   g_last_init_try_ms = 0;
@@ -138,4 +141,21 @@ void poll_scd4x() {
       data.CO2ppm,
       data.temp,
       data.humidity);
+
+#if FORCED_CALIBRATION
+  if (!g_calibration_done && millis() >= FORCED_CALIBRATION_DELAY_MS) {
+    Serial.printf(
+        "SCD4x: starting forced recalibration to %u ppm (current: %u ppm)\r\n",
+        (unsigned)FORCED_CALIBRATION_PPM, (unsigned)data.CO2ppm);
+    g_scd4x.enablePeriodMeasure(SCD4X_STOP_PERIODIC_MEASURE);
+    int16_t correction = g_scd4x.performForcedRecalibration(FORCED_CALIBRATION_PPM);
+    if (correction == (int16_t)0x7fff) {
+      Serial.print("SCD4x: forced recalibration FAILED\r\n");
+    } else {
+      Serial.printf("SCD4x: forced recalibration done, correction=%d ppm\r\n", (int)correction - 0x8000);
+    }
+    g_scd4x.enablePeriodMeasure(SCD4X_START_PERIODIC_MEASURE);
+    g_calibration_done = true;
+  }
+#endif
 }

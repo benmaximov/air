@@ -2,7 +2,7 @@
 
 #include <HardwareSerial.h>
 
-#define DEBUG_SENSOR 0
+#define DEBUG_SENSOR 1
 
 #if DEBUG_SENSOR
 #define DBG_PRINT(...) Serial.print(__VA_ARGS__)
@@ -24,7 +24,7 @@ static Sc05ReadingCallback g_callback = nullptr;
 static uint32_t g_last_valid_ms = 0;
 static const uint32_t SC05_TIMEOUT_MS = 7000;
 
-static void emit_status(SensorStatus status, uint16_t ppm) {
+static void emit_status(SensorStatus status, float ppm) {
   if (g_callback != nullptr) {
     g_callback(status, ppm);
   }
@@ -82,16 +82,16 @@ static bool read_binary_frame(uint8_t out[9]) {
   return false;
 }
 
-static uint16_t parse_binary_ppm(const uint8_t frame[9]) {
-  if (frame[1] == 0x86) {
-    return static_cast<uint16_t>((frame[2] << 8) | frame[3]);
+static float parse_binary_ppm(const uint8_t frame[9]) {
+  // Both active upload (0x17, Table 4) and query response (0x86, Table 8)
+  // share the same layout: Byte4 = gas concentration high, Byte5 = low.
+  // PPM = (high * 256 + low) / 100
+  if (frame[1] == 0x86 || frame[1] == 0x17) {
+    const uint16_t raw = static_cast<uint16_t>((frame[4] << 8) | frame[5]);
+    return raw / 100.0f;
   }
 
-  if (frame[1] == 0x17) {
-    return static_cast<uint16_t>((frame[4] << 8) | frame[5]);
-  }
-
-  return SC05_INVALID_PPM;
+  return -1.0f;
 }
 
 static bool parse_ascii_ppm(uint16_t &ppm_out) {
@@ -159,10 +159,10 @@ void poll_sc05() {
 
   uint8_t frame[9];
   if (read_binary_frame(frame)) {
-    const uint16_t ppm = parse_binary_ppm(frame);
-    if (ppm != SC05_INVALID_PPM) {
+    const float ppm = parse_binary_ppm(frame);
+    if (ppm >= 0.0f) {
       g_last_valid_ms = now;
-      DBG_PRINTF("SC05 H2S=%u ppm (binary)\r\n", ppm);
+      DBG_PRINTF("SC05 H2S=%.2f ppm (binary)\r\n", ppm);
       emit_status(SensorStatus::OK, ppm);
       return;
     }
@@ -171,14 +171,14 @@ void poll_sc05() {
   uint16_t ppm_ascii = 0;
   if (parse_ascii_ppm(ppm_ascii)) {
     g_last_valid_ms = now;
-    DBG_PRINTF("SC05 H2S=%u ppm (ascii)\r\n", ppm_ascii);
-    emit_status(SensorStatus::OK, ppm_ascii);
+    DBG_PRINTF("SC05 H2S=%.2f ppm (ascii)\r\n", (float)ppm_ascii / 100.0f);
+    emit_status(SensorStatus::OK, ppm_ascii / 100.0f);
     return;
   }
 
   if (now - g_last_valid_ms > SC05_TIMEOUT_MS) {
     DBG_PRINT("SC05 timeout: no valid UART data\r\n");
-    emit_status(SensorStatus::TIMEOUT, SC05_INVALID_PPM);
+    emit_status(SensorStatus::TIMEOUT, -1.0f);
     g_last_valid_ms = now;
   }
 }

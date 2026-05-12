@@ -5,9 +5,7 @@
 
 #include "sensor_status.h"
 
-typedef void (*Sc05ReadingCallback)(SensorStatus status, uint16_t h2s_ppm);
-
-static const uint16_t SC05_INVALID_PPM = 0xFFFF;
+typedef void (*Sc05ReadingCallback)(SensorStatus status, float h2s_ppm);
 
 void init_sc05();
 void set_sc05_callback(Sc05ReadingCallback callback);

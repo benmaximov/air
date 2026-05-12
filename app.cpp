@@ -15,13 +15,13 @@
 // {label, value, current_value, threshold, normal_ms, alarm_ms}
 // threshold=0 means no alarm (T, RH)
 DisplayMessage messages[] = {
-  {"CH\x04",  "---- ppm",    0.0f,   100.0f, 3000,  12000}, // CH4  alarm >200 ppm (basement gas installation — early warning)
-  {"H\x02S",  "---- ppm",    0.0f,     5.0f, 3000,  12000}, // H2S  alarm >5 ppm
-  {"CO\x02",  "---- ppm",    0.0f,  1000.0f, 3000,  12000}, // CO2  alarm >1000 ppm
+  {"CH\x04",  "---- ppm",    0.0f,   100.0f, 3000,  15000}, // CH4  alarm >200 ppm (basement gas installation — early warning)
+  {"H\x02S",  "---- ppm",    0.0f,     1.0f, 3000,  15000}, // H2S  alarm >1 ppm
+  {"CO\x02",  "---- ppm",    0.0f,  1000.0f, 3000,  15000}, // CO2  alarm >1000 ppm
   {"T",       "---- \x01""C",0.0f,     0.0f, 3000,   3000}, // T    no alarm
   {"RH",      "---- %",      0.0f,     0.0f, 3000,   3000}, // RH   no alarm
-  {"CO",      "---- ppm",    0.0f,    10.0f, 3000,  12000}, // CO   alarm >10 ppm
-  {"NH\x03",  "---- ppm",   0.0f,    25.0f, 3000,  12000}, // NH3  alarm >25 ppm
+  {"CO",      "---- ppm",    0.0f,    10.0f, 3000,  15000}, // CO   alarm >10 ppm
+  {"NH\x03",  "---- ppm",   0.0f,    25.0f, 3000,  15000}, // NH3  alarm >25 ppm
 };
 extern const size_t messages_count = sizeof(messages) / sizeof(messages[0]);
 
@@ -35,10 +35,10 @@ static void on_zc13_reading(SensorStatus status, uint16_t ch4_ppm) {
   }
 }
 
-static void on_sc05_reading(SensorStatus status, uint16_t h2s_ppm) {
+static void on_sc05_reading(SensorStatus status, float h2s_ppm) {
   if (status == SensorStatus::OK) {
-    messages[1].value         = String(h2s_ppm) + " ppm";
-    messages[1].current_value = (float)h2s_ppm;
+    messages[1].value         = String(h2s_ppm, 2) + " ppm";
+    messages[1].current_value = h2s_ppm;
   } else {
     messages[1].value         = "---- ppm";
     messages[1].current_value = 0.0f;

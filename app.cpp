@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "dht22_reader.h"
+#include "fan.h"
 #include "mq137_reader.h"
 #include "mq7_heater.h"
 #include "sc05_reader.h"
@@ -126,6 +127,8 @@ void setup() {
   init_mq137();
 
   init_wifi_server();
+
+  init_fan();
 }
 
 void loop() {
@@ -145,5 +148,6 @@ void loop() {
   poll_mq7_heater();
   poll_mq137();
   poll_dht22();
+  poll_fan();
   cycle(messages, count);
 }

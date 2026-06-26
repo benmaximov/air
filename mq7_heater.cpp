@@ -14,9 +14,8 @@
 #endif
 
 // MQ-7 heater drive
-static const int MQ7_PWM_PIN     = 13;
-static const int MQ7_PWM_CHANNEL = 3;
-static const int MQ7_PWM_FREQ_HZ = 5000;
+static const int MQ7_PWM_PIN      = 13;
+static const int MQ7_PWM_FREQ_HZ  = 5000;
 static const int MQ7_PWM_RES_BITS = 8;
 
 // Supply and divider (must come before duty calculation)
@@ -68,7 +67,7 @@ static void emit_status(SensorStatus status, float ppm)
 
 static void set_heater_duty(int duty)
 {
-  ledcWrite(MQ7_PWM_CHANNEL, duty);
+  ledcWrite(MQ7_PWM_PIN, duty);
 }
 
 void set_mq7_callback(Mq7ReadingCallback callback)
@@ -78,8 +77,7 @@ void set_mq7_callback(Mq7ReadingCallback callback)
 
 void init_mq7_heater()
 {
-  ledcSetup(MQ7_PWM_CHANNEL, MQ7_PWM_FREQ_HZ, MQ7_PWM_RES_BITS);
-  ledcAttachPin(MQ7_PWM_PIN, MQ7_PWM_CHANNEL);
+  ledcAttach(MQ7_PWM_PIN, MQ7_PWM_FREQ_HZ, MQ7_PWM_RES_BITS);
 
   analogSetPinAttenuation(MQ7_ADC_PIN, ADC_11db);
 

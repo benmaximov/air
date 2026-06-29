@@ -1,30 +1,25 @@
 #include "fan.h"
 
-static const int     FAN_PIN        = 6;
-static const uint32_t FAN_ON_MS    = 30000;  // 30 seconds on
-static const uint32_t FAN_OFF_MS   = 10000;  // 10 seconds off
+static const int      FAN_PIN      = 6;
+static const uint32_t FAN_FREQ_HZ  = 25000;  // 25 kHz PWM
+static const uint8_t  FAN_RES_BITS = 8;      // 0-255 duty range
 
-static bool     g_fan_on       = true;
-static uint32_t g_phase_start  = 0;
+static uint8_t g_duty = 15;
 
 void init_fan() {
-  pinMode(FAN_PIN, OUTPUT);
-  digitalWrite(FAN_PIN, HIGH);
-  g_fan_on      = true;
-  g_phase_start = millis();
+  ledcAttach(FAN_PIN, FAN_FREQ_HZ, FAN_RES_BITS);
+  ledcWrite(FAN_PIN, g_duty);
 }
 
 void poll_fan() {
-  const uint32_t now     = millis();
-  const uint32_t elapsed = now - g_phase_start;
+  // Nothing to poll — duty is set on demand
+}
 
-  if (g_fan_on && elapsed >= FAN_ON_MS) {
-    digitalWrite(FAN_PIN, LOW);
-    g_fan_on      = false;
-    g_phase_start = now;
-  } else if (!g_fan_on && elapsed >= FAN_OFF_MS) {
-    digitalWrite(FAN_PIN, HIGH);
-    g_fan_on      = true;
-    g_phase_start = now;
-  }
+uint8_t fan_get_duty() {
+  return g_duty;
+}
+
+void fan_set_duty(uint8_t duty) {
+  g_duty = duty;
+  ledcWrite(FAN_PIN, g_duty);
 }

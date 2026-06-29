@@ -19,12 +19,12 @@ static const int MQ7_PWM_FREQ_HZ  = 5000;
 static const int MQ7_PWM_RES_BITS = 8;
 
 // Supply and divider (must come before duty calculation)
-static const float VIN_MV       = 4700.0f;  // measured at sensor VCC pin
+static const float VIN_MV       = 4930.0f;  // measured at sensor VCC pin
 static const float R_TOP        = 33000.0f; // top resistor (MQ-B to ADC)
 static const float R_BOTTOM     = 10000.0f; // bottom resistor (ADC to GND)
 static const float RL           = R_TOP + R_BOTTOM;
 static const float DIVIDER_MULT = RL / R_BOTTOM;
-static float       R0           = 20000.0f; // baseline in clean air (runtime-settable)
+static float       R0           = 36000.0f; // baseline in clean air (runtime-settable)
 
 // Duty targets
 static const float MQ7_HEATER_LOW_MV = 1500.0f; // target low temp heater voltage (datasheet: 1.5V)

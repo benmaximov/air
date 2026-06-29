@@ -2,6 +2,7 @@
 
 #include "dht22_reader.h"
 #include "fan.h"
+#include "relay.h"
 #include "mq137_reader.h"
 #include "mq7_heater.h"
 #include "sc05_reader.h"
@@ -13,16 +14,16 @@
 // Set to 1 to enable ADC calibration mode — samples GPIO5 raw and prints mV, skips all other code
 #define ADC_CAL_MODE 0
 
-// {label, value, current_value, threshold, normal_ms, alarm_ms}
+// {label, value, current_value, threshold, normal_ms, alarm_ms, valid}
 // threshold=0 means no alarm (T, RH)
 DisplayMessage messages[] = {
-  {"CH\x04",  "---- ppm",    0.0f,   100.0f, 3000,  15000}, // CH4  alarm >200 ppm (basement gas installation — early warning)
-  {"H\x02S",  "---- ppm",    0.0f,     1.0f, 3000,  15000}, // H2S  alarm >1 ppm
-  {"CO\x02",  "---- ppm",    0.0f,  1000.0f, 3000,  15000}, // CO2  alarm >1000 ppm
-  {"T",       "---- \x01""C",0.0f,     0.0f, 3000,   3000}, // T    no alarm
-  {"RH",      "---- %",      0.0f,     0.0f, 3000,   3000}, // RH   no alarm
-  {"CO",      "---- ppm",    0.0f,    10.0f, 3000,  15000}, // CO   alarm >10 ppm
-  {"NH\x03",  "---- ppm",   0.0f,    25.0f, 3000,  15000}, // NH3  alarm >25 ppm
+  {"CH\x04",  "---- ppm",    0.0f,   100.0f, 3000,  15000, false}, // CH4  alarm >200 ppm (basement gas installation — early warning)
+  {"H\x02S",  "---- ppm",    0.0f,     1.0f, 3000,  15000, false}, // H2S  alarm >1 ppm
+  {"CO\x02",  "---- ppm",    0.0f,  1000.0f, 3000,  15000, false}, // CO2  alarm >1000 ppm
+  {"T",       "---- \x01""C",0.0f,     0.0f, 3000,   3000, false}, // T    no alarm
+  {"RH",      "---- %",      0.0f,     0.0f, 3000,   3000, false}, // RH   no alarm
+  {"CO",      "---- ppm",    0.0f,    10.0f, 3000,  15000, false}, // CO   alarm >10 ppm
+  {"NH\x03",  "---- ppm",   0.0f,    25.0f, 3000,  15000, false}, // NH3  alarm >25 ppm
 };
 extern const size_t messages_count = sizeof(messages) / sizeof(messages[0]);
 
@@ -30,9 +31,11 @@ static void on_zc13_reading(SensorStatus status, uint16_t ch4_ppm) {
   if (status == SensorStatus::OK) {
     messages[0].value         = String(ch4_ppm) + " ppm";
     messages[0].current_value = (float)ch4_ppm;
+    messages[0].valid         = true;
   } else {
     messages[0].value         = "---- ppm";
     messages[0].current_value = 0.0f;
+    messages[0].valid         = false;
   }
 }
 
@@ -40,9 +43,11 @@ static void on_sc05_reading(SensorStatus status, float h2s_ppm) {
   if (status == SensorStatus::OK) {
     messages[1].value         = String(h2s_ppm, 2) + " ppm";
     messages[1].current_value = h2s_ppm;
+    messages[1].valid         = true;
   } else {
     messages[1].value         = "---- ppm";
     messages[1].current_value = 0.0f;
+    messages[1].valid         = false;
   }
 }
 
@@ -56,9 +61,11 @@ static void on_scd4x_reading(
   if (status == SensorStatus::OK) {
     messages[2].value         = String(co2_ppm) + " ppm";
     messages[2].current_value = (float)co2_ppm;
+    messages[2].valid         = true;
   } else {
     messages[2].value         = "---- ppm";
     messages[2].current_value = 0.0f;
+    messages[2].valid         = false;
   }
 }
 
@@ -66,13 +73,17 @@ static void on_dht22_reading(SensorStatus status, float temperature_c, float hum
   if (status == SensorStatus::OK) {
     messages[3].value         = String(temperature_c, 1) + " \x01""C";
     messages[3].current_value = temperature_c;
+    messages[3].valid         = true;
     messages[4].value         = String(humidity_rh, 1) + " %";
     messages[4].current_value = humidity_rh;
+    messages[4].valid         = true;
   } else {
     messages[3].value         = "---- \x01""C";
     messages[3].current_value = 0.0f;
+    messages[3].valid         = false;
     messages[4].value         = "---- %";
     messages[4].current_value = 0.0f;
+    messages[4].valid         = false;
   }
 }
 
@@ -80,9 +91,11 @@ static void on_mq7_reading(SensorStatus status, float ppm) {
   if (status == SensorStatus::OK) {
     messages[5].value         = String(ppm, 1) + " ppm";
     messages[5].current_value = ppm;
+    messages[5].valid         = true;
   } else {
     messages[5].value         = "---- ppm";
     messages[5].current_value = 0.0f;
+    messages[5].valid         = false;
   }
 }
 
@@ -90,9 +103,11 @@ static void on_mq137_reading(SensorStatus status, float ppm) {
   if (status == SensorStatus::OK) {
     messages[6].value         = String(ppm, 1) + " ppm";
     messages[6].current_value = ppm;
+    messages[6].valid         = true;
   } else {
     messages[6].value         = "---- ppm";
     messages[6].current_value = 0.0f;
+    messages[6].valid         = false;
   }
 }
 
@@ -129,6 +144,7 @@ void setup() {
   init_wifi_server();
 
   init_fan();
+  init_relay();
 }
 
 void loop() {
@@ -149,5 +165,6 @@ void loop() {
   poll_mq137();
   poll_dht22();
   poll_fan();
+  poll_relay();
   cycle(messages, count);
 }

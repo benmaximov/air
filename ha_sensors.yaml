@@ -14,6 +14,7 @@
     - name: "Basement CH4"
       unique_id: basement_ch4
       value_template: "{{ value_json['CH4']['raw'] }}"
+      availability_template: "{{ value_json['CH4']['raw'] is not none }}"
       unit_of_measurement: "ppm"
       device_class: gas
       state_class: measurement
@@ -22,6 +23,7 @@
     - name: "Basement H2S"
       unique_id: basement_h2s
       value_template: "{{ value_json['H2S']['raw'] }}"
+      availability_template: "{{ value_json['H2S']['raw'] is not none }}"
       unit_of_measurement: "ppm"
       state_class: measurement
       icon: mdi:molecule
@@ -29,6 +31,7 @@
     - name: "Basement CO2"
       unique_id: basement_co2
       value_template: "{{ value_json['CO2']['raw'] }}"
+      availability_template: "{{ value_json['CO2']['raw'] is not none }}"
       unit_of_measurement: "ppm"
       device_class: carbon_dioxide
       state_class: measurement
@@ -37,6 +40,7 @@
     - name: "Basement Temperature"
       unique_id: basement_temperature
       value_template: "{{ value_json['T']['raw'] }}"
+      availability_template: "{{ value_json['T']['raw'] is not none }}"
       unit_of_measurement: "°C"
       device_class: temperature
       state_class: measurement
@@ -45,6 +49,7 @@
     - name: "Basement Humidity"
       unique_id: basement_humidity
       value_template: "{{ value_json['RH']['raw'] }}"
+      availability_template: "{{ value_json['RH']['raw'] is not none }}"
       unit_of_measurement: "%"
       device_class: humidity
       state_class: measurement
@@ -53,6 +58,7 @@
     - name: "Basement CO"
       unique_id: basement_co
       value_template: "{{ value_json['CO']['raw'] }}"
+      availability_template: "{{ value_json['CO']['raw'] is not none }}"
       unit_of_measurement: "ppm"
       device_class: carbon_monoxide
       state_class: measurement
@@ -61,6 +67,7 @@
     - name: "Basement NH3"
       unique_id: basement_nh3
       value_template: "{{ value_json['NH3']['raw'] }}"
+      availability_template: "{{ value_json['NH3']['raw'] is not none }}"
       unit_of_measurement: "ppm"
       state_class: measurement
       icon: mdi:chemical-weapon

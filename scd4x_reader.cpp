@@ -70,10 +70,10 @@ static bool scd4x_try_init() {
     return false;
   }
 
-  // Set ambient pressure compensation (944 mbar = 94400 Pa).
+  // Set ambient pressure compensation (950 mbar = 95000 Pa).
   // The library divides by 100 internally before sending to the sensor register,
-  // so pass Pa here. This corrects CO2 upward for our below-sea-level pressure.
-  //g_scd4x.setAmbientPressure(94400);
+  // so pass Pa here. This corrects CO2 for our below-standard pressure.
+  //g_scd4x.setAmbientPressure(95000);
 
   // Start periodic measurement mode.
   g_scd4x.enablePeriodMeasure(SCD4X_START_PERIODIC_MEASURE);
@@ -158,4 +158,22 @@ void poll_scd4x() {
     g_calibration_done = true;
   }
 #endif
+}
+
+int16_t scd4x_force_recalibration(uint16_t reference_ppm) {
+  if (!g_scd4x_ok) {
+    return (int16_t)0x7fff;  // sensor not available
+  }
+
+  // Must stop periodic measurement before FRC
+  g_scd4x.enablePeriodMeasure(SCD4X_STOP_PERIODIC_MEASURE);
+  delay(500);  // sensor needs 500ms after stop before accepting commands
+
+  int16_t correction = g_scd4x.performForcedRecalibration(reference_ppm);
+
+  // Restart periodic measurement
+  g_scd4x.enablePeriodMeasure(SCD4X_START_PERIODIC_MEASURE);
+  g_last_ready_ms = millis();
+
+  return correction;
 }

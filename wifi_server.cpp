@@ -20,7 +20,7 @@
 #define DBG_PRINTF(...)
 #endif
 
-static const char* WIFI_SSID = "Socket3";
+static const char* WIFI_SSID = "Socket-G";
 static const char* WIFI_PASS = "mercedes*";
 static const int   HTTP_PORT = 8080;
 

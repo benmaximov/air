@@ -24,7 +24,7 @@ static const float DIVIDER_MULT = RL / R_BOTTOM;
 static const float VIN_MV       = 4930.0f;  // measured at sensor heater / VCC pin
 
 // Calibration — R0 in clean air, update after burn-in
-static float       R0 = 19000.0f; // placeholder — run CAL_MODE to calibrate (runtime-settable)
+static float       R0 = 16000.0f; // placeholder — run CAL_MODE to calibrate (runtime-settable)
 
 // Sampling: average over a window, emit once per window
 static const uint32_t SAMPLE_INTERVAL_MS = 1000;  // 1 sample/sec
